@@ -150,3 +150,7 @@ Before creating new labels or projects, check with `list_*` first to avoid dupli
 - **One issue per outcome.** Don't fold multiple unrelated tasks into one issue's description.
 - **Titles are actions, not topics.** "Email Sam re: Q3 budget" — not "Q3 budget."
 - **Surface, don't withhold.** Overdue items, stalled projects, long-untouched Waiting-For items — mention them when they're relevant, don't wait to be asked.
+
+## Self-update
+
+The canonical version of this skill lives at <https://github.com/JRTaylord/Project-Management-Skill>. When the user asks to update this skill, fetch the latest `gtd-linear-SKILL.md` from that repo's `master` branch and replace this file with its contents.
