@@ -62,22 +62,71 @@ Apply one or more per next-action issue. The user may have their own context set
 
 **Project hygiene.** Every Linear project should have at least one issue in `Todo` that represents the next physical action. If a project has no next action, it's stalled — flag it during the weekly review.
 
+### Drift Detection (runs on every task interaction)
+
+On **every** task-related interaction — capture, clarify, engage, or weekly review — run a background scan before proceeding with the user's request. Surface findings inline, not in a separate report. Keep it brief: one or two sentences per finding, not a wall of warnings.
+
+**What to scan:**
+
+1. **Stale active issues.** Issues in `Todo` or `In Progress` not updated in 14+ days → "X hasn't been touched in N days — still alive?"
+2. **Projects with no next action.** Active projects where no issue is in `Todo` or `In Progress` → flag as stalled.
+3. **Overdue issues.** Issues with due dates in the past → flag immediately.
+4. **Obliger pattern: churn without closure.** When the user captures a new item into a project, check that project's last 30 days. If issues have been *added* but none *closed* in that window → "You've added N items to [project] in the last month and closed 0 — what's blocking progress?" This is the obliger failure signature: starting new things while old ones rot. Surface it every time, not just during reviews.
+
+**Tone:** Direct, not nagging. State the fact, ask the question, move on. The user can dismiss findings, but the findings will recur next interaction if the underlying state hasn't changed.
+
 ### 4. Reflect (Weekly Review)
 
-When the user asks for a weekly review, or it's been a week since the last one, run this sequence:
+#### Accountability model: opt-out, not opt-in
 
-1. **Process the inbox to zero.** List every issue in `Triage`/Inbox. For each, run stage 2 (Clarify) with the user.
-2. **Review every active project.** `list_projects` filtered to active. For each, confirm it still has a defined next action. If not, ask: "What's the next concrete step on this?" or "Should this move to Someday, or close?"
-3. **Review Waiting For.** `list_issues` with label `waiting-for`. For each, ask whether to nudge the blocker, escalate, or drop it.
-4. **Review Someday/Maybe.** Scan the Someday project. Surface anything that's become time-sensitive or that the user clearly isn't going to do — offer to close it.
-5. **Scan upcoming.** Issues with due dates in the next 7 days — confirm they're still real and have a next action.
-6. **Surface stalled items.** Issues that haven't been updated in over 14 days and aren't in `Someday`/`Backlog` — ask whether they're still alive.
+The weekly review is not on-demand — it is the default. At the start of **every task-related conversation**, check the timestamp of the last completed weekly review (stored in the `Weekly Review Log` issue — see below). If more than 7 days have passed, open with:
 
-Output a short summary at the end: inbox processed, projects active, projects stalled, items moved to Someday, items closed. Don't make this a wall of text — the user has just done the work.
+> "It's been N days since your last weekly review — want to run one now, or tell me why we're skipping?"
+
+Deferral is allowed, but must be **named** — "I'm skipping because X." Silent drift is not tolerated. If the user defers, note the reason as a comment on the `Weekly Review Log` issue so the pattern is visible over time.
+
+**Weekly Review Log.** A dedicated Linear issue titled `Weekly Review Log`, kept in an active state. Each completed weekly review is recorded as a comment with the completion date. This issue is the single source of truth for when the last review happened.
+
+#### Commitment Log
+
+A Linear document titled `Commitment Log` tracks follow-through across weeks. Two sections per week:
+
+- **Committed this week** — what the user said they'd do during the weekly review
+- **Done this week** — what actually got completed
+
+At the start of each weekly review, read the Commitment Log and surface the hit rate:
+
+> "Last week you committed to N items and completed M (X%). Here's what carried over: ..."
+
+The hit rate is the metric. Watching it drop is a stronger nudge than abstract accountability — the number becomes the outer expectation.
+
+#### The weekly review sequence
+
+When running a weekly review (whether prompted by the opt-out nudge or requested directly):
+
+1. **Surface the Commitment Log.** Read last week's committed vs. done. State the hit rate. List carryovers.
+2. **Process the inbox to zero.** List every issue in `Triage`/Inbox. For each, run stage 2 (Clarify) with the user.
+3. **Review every active project.** `list_projects` filtered to active. For each, confirm it still has a defined next action. If not, ask: "What's the next concrete step on this?" or "Should this move to Someday, or close?"
+4. **Review Waiting For.** `list_issues` with label `waiting-for`. For each, ask whether to nudge the blocker, escalate, or drop it.
+5. **Review Someday/Maybe.** Scan the Someday project. Surface anything that's become time-sensitive or that the user clearly isn't going to do — offer to close it.
+6. **Scan upcoming.** Issues with due dates in the next 7 days — confirm they're still real and have a next action.
+7. **Surface stalled items.** Issues that haven't been updated in over 14 days and aren't in `Someday`/`Backlog` — ask whether they're still alive.
+8. **Set commitments for next week.** Ask: "What are you committing to finish this week?" Record the answer in the Commitment Log.
+9. **Record completion.** Add a comment to the `Weekly Review Log` issue with today's date.
+
+Output a short summary at the end: inbox processed, projects active, projects stalled, items moved to Someday, items closed, commitment hit rate. Don't make this a wall of text — the user has just done the work.
 
 ### 5. Engage (What to do now)
 
 When the user asks "what should I work on" / "what's next":
+
+**Before recommending, check system health.** Query the inbox (`Triage` issues) and the `Weekly Review Log` issue. If either condition is true, surface it before any recommendation:
+
+> "Before I recommend something — your inbox has N unprocessed items and your last weekly review was M days ago. Process those first, or explicitly say 'skip and recommend anyway.'"
+
+This doesn't block the user — but requires them to **name the override**. Silent bypassing of system hygiene is how obliger drift starts.
+
+If the user says "skip" or the system is healthy, proceed:
 
 1. Pull current state: `list_issues` filtered to assignee=user, state in (`Todo`, `In Progress`), not in `Someday`.
 2. Filter by what's actually possible right now. GTD's four criteria, in order:
